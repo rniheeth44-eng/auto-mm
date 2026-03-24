@@ -182,22 +182,6 @@ async function sendPaymentInvoice(channel, deal) {
     msgs.push(await channel.send({ embeds: [invoiceEmbed], components: [copyRow] }));
   }
 
-  const receivedEmbed = new EmbedBuilder()
-    .setColor(0x00c853)
-    .setDescription('Amount Has Been Received, Its Safe And Secured inside the bot, Now Please Proceed With your Deal, Once Done Ask Sender To Release.');
-
-  const actionRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('release_funds')
-      .setLabel('Release')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('cancel_deal')
-      .setLabel('Cancel')
-      .setStyle(ButtonStyle.Danger),
-  );
-
-  msgs.push(await channel.send({ embeds: [receivedEmbed], components: [actionRow] }));
   deal.invoiceMsg = msgs;
 }
 
