@@ -120,12 +120,7 @@ async function handleDealMessage(message, deal, client) {
 async function sendPaymentInvoice(channel, deal) {
   const { coin, sender, receiver, amount } = deal;
 
-  // Show loading while fetching price
-  const loadingMsg = await channel.send({ content: ':loadingg: Fetching live exchange rate...' });
-
   const { price, fee, totalUsd, cryptoAmount, address } = await convertUsdToCrypto(amount, coin);
-
-  await loadingMsg.delete().catch(() => {});
 
   deal.cryptoAmount = cryptoAmount;
   deal.address = address;
@@ -187,8 +182,7 @@ async function sendPaymentInvoice(channel, deal) {
     msgs.push(await channel.send({ embeds: [invoiceEmbed], components: [copyRow] }));
   }
 
-  // Awaiting transaction message with loading emoji
-  msgs.push(await channel.send({ content: ':loadingg: Awaiting transaction...' }));
+  msgs.push(await channel.send({ content: 'Awaiting transaction...' }));
   deal.invoiceMsg = msgs;
 }
 
