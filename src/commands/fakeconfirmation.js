@@ -42,7 +42,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setColor(0x00c853)
       .setTitle('Transaction has been detected')
-      .setDescription('Amount has been received, proceed with your deal.')
+      .setDescription('Amount Has Been Received, Its Safe And Secured inside the bot, Now Please Proceed With your Deal, Once Done Ask Sender To Release.')
       .addFields(
         { name: 'Transaction', value: '[View Transaction](https://blockchair.com/litecoin)', inline: false },
         { name: 'Required Confirmations', value: '1', inline: false },
