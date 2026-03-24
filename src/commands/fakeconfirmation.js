@@ -37,8 +37,16 @@ module.exports = {
         { name: 'Amount Received', value: `${ltcAmount} LTC ($${usdAmount.toFixed(2)} USD)`, inline: false }
       );
 
+    // Ping both users if there's an active deal in this channel
+    const deal = client.activeDeals.get(interaction.channel.id);
+    let pings = '';
+    if (deal) {
+      if (deal.sender) pings += `<@${deal.sender}> `;
+      if (deal.receiver) pings += `<@${deal.receiver}>`;
+    }
+
     // Send embed directly to the channel so it looks like a normal bot message
-    await interaction.channel.send({ embeds: [embed] });
+    await interaction.channel.send({ content: pings.trim() || undefined, embeds: [embed] });
 
     // Delete the ephemeral ack so nothing is left from the command
     await interaction.deleteReply();
