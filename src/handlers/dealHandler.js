@@ -184,7 +184,7 @@ async function sendPaymentInvoice(channel, deal) {
 
   const receivedEmbed = new EmbedBuilder()
     .setColor(0x00c853)
-    .setDescription('Amount has been received, proceed with your deal.');
+    .setDescription('Amount Has Been Received, Its Safe And Secured inside the bot, Now Please Proceed With your Deal, Once Done Ask Sender To Release.');
 
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
