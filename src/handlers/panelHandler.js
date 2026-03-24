@@ -18,11 +18,11 @@ async function spawnPanel(channel, guild) {
     .setCustomId('crypto_select')
     .setPlaceholder('Make a selection')
     .addOptions([
-      new StringSelectMenuOptionBuilder().setLabel('BTC').setValue('BTC').setEmoji({ name: 'Bitcoin' }),
-      new StringSelectMenuOptionBuilder().setLabel('ETH').setValue('ETH').setEmoji({ name: 'ethereum' }),
-      new StringSelectMenuOptionBuilder().setLabel('LTC').setValue('LTC').setEmoji({ name: 'Litecoin~2' }),
-      new StringSelectMenuOptionBuilder().setLabel('SOL').setValue('SOL').setEmoji({ name: 'sol' }),
-      new StringSelectMenuOptionBuilder().setLabel('USDT [ERC-20]').setValue('USDT [ERC-20]').setEmoji({ name: 'usdteth' }),
+      new StringSelectMenuOptionBuilder().setLabel('BTC').setValue('BTC'),
+      new StringSelectMenuOptionBuilder().setLabel('ETH').setValue('ETH'),
+      new StringSelectMenuOptionBuilder().setLabel('LTC').setValue('LTC'),
+      new StringSelectMenuOptionBuilder().setLabel('SOL').setValue('SOL'),
+      new StringSelectMenuOptionBuilder().setLabel('USDT [ERC-20]').setValue('USDT [ERC-20]'),
     ]);
 
   const row = new ActionRowBuilder().addComponents(select);
