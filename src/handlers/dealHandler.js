@@ -182,7 +182,22 @@ async function sendPaymentInvoice(channel, deal) {
     msgs.push(await channel.send({ embeds: [invoiceEmbed], components: [copyRow] }));
   }
 
-  msgs.push(await channel.send({ content: 'Awaiting transaction...' }));
+  const receivedEmbed = new EmbedBuilder()
+    .setColor(0x00c853)
+    .setDescription('Amount has been received, proceed with your deal.');
+
+  const actionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('release_funds')
+      .setLabel('Release')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('cancel_deal')
+      .setLabel('Cancel')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+  msgs.push(await channel.send({ embeds: [receivedEmbed], components: [actionRow] }));
   deal.invoiceMsg = msgs;
 }
 
