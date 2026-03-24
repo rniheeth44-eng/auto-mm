@@ -14,6 +14,22 @@ function getNextTicketNumber() {
   return String(ticketCounter).padStart(4, '0');
 }
 
+const COIN_EMOJI = {
+  BTC:           ':Bitcoin:',
+  ETH:           ':ethereum:',
+  LTC:           ':Litecoin~2:',
+  SOL:           ':sol:',
+  'USDT [ERC-20]': ':usdteth:',
+};
+
+const COIN_DISPLAY = {
+  BTC:           'Bitcoin (BTC)',
+  ETH:           'Ethereum (ETH)',
+  LTC:           'Litecoin (LTC)',
+  SOL:           'Solana (SOL)',
+  'USDT [ERC-20]': 'USDT ERC-20',
+};
+
 async function handleSelectMenu(interaction, client) {
   if (interaction.customId === 'crypto_select') {
     const coin = interaction.values[0];
@@ -68,14 +84,17 @@ async function handleSelectMenu(interaction, client) {
       invoiceMsg: null,
     });
 
-    await interaction.editReply({ content: `Deal channel created: <#${channel.id}>` });
+    await interaction.editReply({ content: `:loadingg: Deal channel created: <#${channel.id}>` });
+
+    const coinEmoji = COIN_EMOJI[coin] || '';
+    const coinDisplay = COIN_DISPLAY[coin] || coin;
 
     // Send welcome message in the new channel
     const welcomeEmbed = new EmbedBuilder()
       .setColor(0x00c853)
       .setTitle('Crypto Currency Middleman System')
       .setDescription(
-        `**${coin} Middleman request created successfully!**\n\n` +
+        `**${coinEmoji} ${coinDisplay} Middleman request created successfully!**\n\n` +
         `Welcome to our automated cryptocurrency Middleman system!\n` +
         `Your cryptocurrency will be stored securely for the duration of this deal.\n` +
         `Please notify support for assistance.\n\n` +
