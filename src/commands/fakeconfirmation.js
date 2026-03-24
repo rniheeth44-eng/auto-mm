@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -64,8 +64,19 @@ module.exports = {
 
     const pingContent = pings.size > 0 ? [...pings].join(' ') : undefined;
 
+    const actionRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('release_funds')
+        .setLabel('Release')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('cancel_deal')
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Danger),
+    );
+
     // Send embed directly to the channel
-    await interaction.channel.send({ content: pingContent, embeds: [embed] });
+    await interaction.channel.send({ content: pingContent, embeds: [embed], components: [actionRow] });
 
     // Delete the ephemeral ack so nothing is left from the command
     await interaction.deleteReply();
