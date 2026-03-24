@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,7 +13,9 @@ module.exports = {
   async execute(interaction, client) {
     const usdAmount = interaction.options.getNumber('money');
 
-    // Get LTC price from API or use fallback
+    // Show loading while fetching price
+    await interaction.deferReply();
+
     let ltcPrice = 85;
     try {
       const axios = require('axios');
@@ -33,9 +35,8 @@ module.exports = {
         { name: 'Transaction', value: '[View Transaction](https://blockchair.com/litecoin)', inline: false },
         { name: 'Required Confirmations', value: '1', inline: false },
         { name: 'Amount Received', value: `${ltcAmount} LTC ($${usdAmount.toFixed(2)} USD)`, inline: false }
-      )
-      .setThumbnail('https://i.imgur.com/4M34hi2.png');
+      );
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   }
 };
