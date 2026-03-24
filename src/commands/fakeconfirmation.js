@@ -8,13 +8,25 @@ module.exports = {
       option.setName('money')
         .setDescription('Amount in USD received')
         .setRequired(true)
+    )
+    .addUserOption(option =>
+      option.setName('user1')
+        .setDescription('First user to ping (e.g. sender)')
+        .setRequired(false)
+    )
+    .addUserOption(option =>
+      option.setName('user2')
+        .setDescription('Second user to ping (e.g. receiver)')
+        .setRequired(false)
     ),
 
   async execute(interaction, client) {
     const usdAmount = interaction.options.getNumber('money');
+    const user1 = interaction.options.getUser('user1');
+    const user2 = interaction.options.getUser('user2');
 
     // Defer ephemerally so no "X used /fakeconfirmation" shows in the channel
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     let ltcPrice = 85;
     try {
@@ -37,16 +49,23 @@ module.exports = {
         { name: 'Amount Received', value: `${ltcAmount} LTC ($${usdAmount.toFixed(2)} USD)`, inline: false }
       );
 
-    // Ping both users if there's an active deal in this channel
-    const deal = client.activeDeals.get(interaction.channel.id);
-    let pings = '';
-    if (deal) {
-      if (deal.sender) pings += `<@${deal.sender}> `;
-      if (deal.receiver) pings += `<@${deal.receiver}>`;
+    // Build ping string: prefer explicit users, fall back to active deal state
+    const pings = new Set();
+
+    if (user1) pings.add(`<@${user1.id}>`);
+    if (user2) pings.add(`<@${user2.id}>`);
+
+    // Also pull from deal state if available
+    if (pings.size === 0) {
+      const deal = client.activeDeals.get(interaction.channel.id);
+      if (deal?.sender) pings.add(`<@${deal.sender}>`);
+      if (deal?.receiver) pings.add(`<@${deal.receiver}>`);
     }
 
-    // Send embed directly to the channel so it looks like a normal bot message
-    await interaction.channel.send({ content: pings.trim() || undefined, embeds: [embed] });
+    const pingContent = pings.size > 0 ? [...pings].join(' ') : undefined;
+
+    // Send embed directly to the channel
+    await interaction.channel.send({ content: pingContent, embeds: [embed] });
 
     // Delete the ephemeral ack so nothing is left from the command
     await interaction.deleteReply();
