@@ -25,6 +25,36 @@ async function handleButton(interaction, client) {
     return;
   }
 
+  // Release funds
+  if (interaction.customId === 'release_funds') {
+    if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+
+    const releaseEmbed = new EmbedBuilder()
+      .setColor(0x00c853)
+      .setTitle('Deal Complete')
+      .setDescription(`Funds have been released to <@${deal.receiver}>.\n\nThank you for using our Middleman service. This ticket will close in 10 seconds.`);
+
+    await interaction.update({ embeds: [releaseEmbed], components: [] });
+    client.activeDeals.delete(interaction.channel.id);
+    setTimeout(() => interaction.channel.delete().catch(() => {}), 10000);
+    return;
+  }
+
+  // Cancel deal
+  if (interaction.customId === 'cancel_deal') {
+    if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+
+    const cancelEmbed = new EmbedBuilder()
+      .setColor(0xe53935)
+      .setTitle('Deal Cancelled')
+      .setDescription('This deal has been cancelled. This ticket will close in 10 seconds.');
+
+    await interaction.update({ embeds: [cancelEmbed], components: [] });
+    client.activeDeals.delete(interaction.channel.id);
+    setTimeout(() => interaction.channel.delete().catch(() => {}), 10000);
+    return;
+  }
+
   if (!deal) return;
 
   // Role selection
