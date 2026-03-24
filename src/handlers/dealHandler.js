@@ -3,11 +3,18 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  PermissionFlagsBits,
   AttachmentBuilder,
 } = require('discord.js');
 const { convertUsdToCrypto } = require('../utils/crypto');
 const { generateQR } = require('../utils/qrcode');
+
+const COIN_DISPLAY = {
+  BTC:           'Bitcoin (BTC)',
+  ETH:           'Ethereum (ETH)',
+  LTC:           'Litecoin (LTC)',
+  SOL:           'Solana (SOL)',
+  'USDT [ERC-20]': 'USDT ERC-20',
+};
 
 async function handleDealMessage(message, deal, client) {
   const channel = message.channel;
@@ -112,11 +119,20 @@ async function handleDealMessage(message, deal, client) {
 
 async function sendPaymentInvoice(channel, deal) {
   const { coin, sender, receiver, amount } = deal;
+
+  // Show loading while fetching price
+  const loadingMsg = await channel.send({ content: ':loadingg: Fetching live exchange rate...' });
+
   const { price, fee, totalUsd, cryptoAmount, address } = await convertUsdToCrypto(amount, coin);
+
+  await loadingMsg.delete().catch(() => {});
 
   deal.cryptoAmount = cryptoAmount;
   deal.address = address;
   deal.step = 'awaiting_payment';
+
+  const coinDisplay = COIN_DISPLAY[coin] || coin;
+  const coinTicker = coin.split(' ')[0];
 
   const summaryEmbed = new EmbedBuilder()
     .setColor(0x2b2d31)
@@ -128,7 +144,7 @@ async function sendPaymentInvoice(channel, deal) {
       { name: 'Sender', value: `<@${sender}>`, inline: false },
       { name: 'Receiver', value: `<@${receiver}>`, inline: false },
       { name: 'Deal Value', value: `$${amount.toFixed(2)}`, inline: false },
-      { name: 'Coin', value: `${channel.id}\n${coin === 'LTC' ? 'Litecoin (LTC)' : coin}`, inline: false },
+      { name: 'Coin', value: `${channel.id}\n${coinDisplay}`, inline: false },
     );
 
   let qrPath = null;
@@ -146,7 +162,7 @@ async function sendPaymentInvoice(channel, deal) {
       { name: 'Address', value: address, inline: false },
       {
         name: 'Amount',
-        value: `${cryptoAmount} ${coin.split(' ')[0]}\n($${totalUsd.toFixed(2)} USD (includes $${fee.toFixed(2)} fee))\n\nExchange Rate: 1 ${coin.split(' ')[0]} = $${price.toFixed(2)} USD`,
+        value: `${cryptoAmount} ${coinTicker}\n($${totalUsd.toFixed(2)} USD (includes $${fee.toFixed(2)} fee))\n\nExchange Rate: 1 ${coinTicker} = $${price.toFixed(2)} USD`,
         inline: false
       }
     );
@@ -157,10 +173,6 @@ async function sendPaymentInvoice(channel, deal) {
       .setLabel('Copy Details')
       .setStyle(ButtonStyle.Secondary)
   );
-
-  const awaitingEmbed = new EmbedBuilder()
-    .setColor(0x2b2d31)
-    .setDescription('Awaiting transaction...');
 
   const msgs = [];
   msgs.push(await channel.send({ content: `<@${sender}>`, embeds: [summaryEmbed] }));
@@ -175,7 +187,8 @@ async function sendPaymentInvoice(channel, deal) {
     msgs.push(await channel.send({ embeds: [invoiceEmbed], components: [copyRow] }));
   }
 
-  msgs.push(await channel.send({ embeds: [awaitingEmbed] }));
+  // Awaiting transaction message with loading emoji
+  msgs.push(await channel.send({ content: ':loadingg: Awaiting transaction...' }));
   deal.invoiceMsg = msgs;
 }
 
