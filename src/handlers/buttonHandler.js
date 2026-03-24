@@ -28,6 +28,9 @@ async function handleButton(interaction, client) {
   // Release funds
   if (interaction.customId === 'release_funds') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+    if (interaction.user.id !== deal.sender) {
+      await interaction.reply({ content: 'Only the **Sender** can release the funds.', ephemeral: true }); return;
+    }
 
     const releaseEmbed = new EmbedBuilder()
       .setColor(0x00c853)
@@ -43,6 +46,9 @@ async function handleButton(interaction, client) {
   // Cancel deal
   if (interaction.customId === 'cancel_deal') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+    if (interaction.user.id !== deal.sender) {
+      await interaction.reply({ content: 'Only the **Sender** can cancel the deal.', ephemeral: true }); return;
+    }
 
     const cancelEmbed = new EmbedBuilder()
       .setColor(0xe53935)
