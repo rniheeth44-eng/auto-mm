@@ -10,7 +10,7 @@ async function spawnPanel(channel, guild) {
       '• Deals under $250: $2\n' +
       '• Deals under $50: $0.50\n' +
       '• __Deals under $10 are **FREE**__\n' +
-      '• USDT & USDC have $1 subcharge\n\n' +
+      '• USDT has $1 subcharge\n\n' +
       'Press the dropdown below to select & initiate a deal with supported cryptocurrencies.'
     );
 
@@ -18,12 +18,11 @@ async function spawnPanel(channel, guild) {
     .setCustomId('crypto_select')
     .setPlaceholder('Make a selection')
     .addOptions([
-      new StringSelectMenuOptionBuilder().setLabel('BTC').setValue('BTC').setEmoji('🟠'),
-      new StringSelectMenuOptionBuilder().setLabel('ETH').setValue('ETH').setEmoji('🔷'),
-      new StringSelectMenuOptionBuilder().setLabel('LTC').setValue('LTC').setEmoji('⬜'),
-      new StringSelectMenuOptionBuilder().setLabel('SOL').setValue('SOL').setEmoji('🟣'),
-      new StringSelectMenuOptionBuilder().setLabel('USDT [ERC-20]').setValue('USDT [ERC-20]').setEmoji('💚'),
-      new StringSelectMenuOptionBuilder().setLabel('USDC [ERC-20]').setValue('USDC [ERC-20]').setEmoji('🔵'),
+      new StringSelectMenuOptionBuilder().setLabel('BTC').setValue('BTC').setEmoji({ name: 'Bitcoin' }),
+      new StringSelectMenuOptionBuilder().setLabel('ETH').setValue('ETH').setEmoji({ name: 'ethereum' }),
+      new StringSelectMenuOptionBuilder().setLabel('LTC').setValue('LTC').setEmoji({ name: 'Litecoin~2' }),
+      new StringSelectMenuOptionBuilder().setLabel('SOL').setValue('SOL').setEmoji({ name: 'sol' }),
+      new StringSelectMenuOptionBuilder().setLabel('USDT [ERC-20]').setValue('USDT [ERC-20]').setEmoji({ name: 'usdteth' }),
     ]);
 
   const row = new ActionRowBuilder().addComponents(select);
