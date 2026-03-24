@@ -13,8 +13,8 @@ module.exports = {
   async execute(interaction, client) {
     const usdAmount = interaction.options.getNumber('money');
 
-    // Show loading while fetching price
-    await interaction.deferReply();
+    // Defer ephemerally so no "X used /fakeconfirmation" shows in the channel
+    await interaction.deferReply({ ephemeral: true });
 
     let ltcPrice = 85;
     try {
@@ -37,6 +37,10 @@ module.exports = {
         { name: 'Amount Received', value: `${ltcAmount} LTC ($${usdAmount.toFixed(2)} USD)`, inline: false }
       );
 
-    await interaction.editReply({ embeds: [embed] });
+    // Send embed directly to the channel so it looks like a normal bot message
+    await interaction.channel.send({ embeds: [embed] });
+
+    // Delete the ephemeral ack so nothing is left from the command
+    await interaction.deleteReply();
   }
 };
