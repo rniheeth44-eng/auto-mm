@@ -3,7 +3,9 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  AttachmentBuilder,
 } = require('discord.js');
+const path = require('path');
 const { sendPaymentInvoice } = require('./dealHandler');
 
 async function handleButton(interaction, client) {
@@ -61,6 +63,43 @@ async function handleButton(interaction, client) {
     return;
   }
 
+  // Join Us — give mercy role and send welcome message
+  if (interaction.customId === 'mercy_join') {
+    const { getMercyRoleId } = require('../utils/settings');
+    const mercyRoleId = getMercyRoleId();
+
+    await interaction.deferReply({ ephemeral: false });
+
+    if (!mercyRoleId) {
+      await interaction.editReply({ content: '⚠️ No mercy role has been set. Ask an admin to run `/setmercyrole @role`.', ephemeral: true });
+      return;
+    }
+
+    let member;
+    try {
+      member = await interaction.guild.members.fetch(interaction.user.id);
+      await member.roles.add(mercyRoleId);
+    } catch (e) {
+      await interaction.editReply({ content: 'Failed to assign the role. Check bot permissions.', ephemeral: true });
+      return;
+    }
+
+    const welcomeMsg =
+      `@${interaction.user.username} Welcome! Now you're part of our fake Middleman — which is how we got you — so you can hit on others and take your revenge. 😈\n\n` +
+      `Check the guide channel for tips and guides.\n\n` +
+      `You've also received <@&${mercyRoleId}> — our hitter role. Keep it safe. 🔒\n` +
+      `@${interaction.user.username} has accepted his faith, and wanted to join us. 🤝`;
+
+    await interaction.editReply({ content: welcomeMsg });
+    return;
+  }
+
+  // Leave — dismiss
+  if (interaction.customId === 'mercy_leave') {
+    await interaction.reply({ content: 'You have chosen to leave. Goodbye.', ephemeral: true });
+    return;
+  }
+
   if (!deal) return;
 
   // Role selection
@@ -91,7 +130,6 @@ async function handleButton(interaction, client) {
       await interaction.reply({ content: 'The Receiver role is already taken.', ephemeral: true });
       return;
     }
-    // Warn ephemeral - sending money to bot
     await interaction.reply({
       content: 'You selected receiver. Sending money to the bot will result in getting scammed.',
       ephemeral: true,
@@ -126,7 +164,6 @@ async function handleButton(interaction, client) {
     }
 
     if (deal.rolesConfirmed.sender && deal.rolesConfirmed.receiver) {
-      // Both confirmed - ask for amount from sender
       deal.step = 'await_amount';
       const amountEmbed = new EmbedBuilder()
         .setColor(0xfdd835)
@@ -199,7 +236,6 @@ async function updateRoleEmbed(interaction, deal) {
 
 async function checkRolesComplete(interaction, deal) {
   if (deal.sender && deal.receiver) {
-    // Both roles assigned - show confirmation embed
     const confirmEmbed = new EmbedBuilder()
       .setColor(0x00c853)
       .setTitle('Role Confirmation')
