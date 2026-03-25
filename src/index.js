@@ -34,6 +34,16 @@ client.once('ready', async () => {
   } catch (err) {
     console.error('Error registering slash commands:', err.message);
   }
+
+  // Auto-start LTC monitor if address already saved
+  try {
+    const { getLtcAddress } = require('./utils/settings');
+    const { startMonitor } = require('./utils/monitor');
+    const addr = getLtcAddress();
+    if (addr) startMonitor(addr, client);
+  } catch (e) {
+    console.error('Monitor start error:', e.message);
+  }
 });
 
 // Global error handlers — prevent bot crashes
