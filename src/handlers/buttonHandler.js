@@ -27,21 +27,64 @@ async function handleButton(interaction, client) {
     return;
   }
 
-  // Release funds
+  // Release funds — show confirm/incorrect first
   if (interaction.customId === 'release_funds') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
-    if (interaction.user.id !== deal.sender) {
+    if (deal.sender && interaction.user.id !== deal.sender) {
       await interaction.reply({ content: 'Only the **Sender** can release the funds.', ephemeral: true }); return;
+    }
+
+    const confirmEmbed = new EmbedBuilder()
+      .setColor(0xfdd835)
+      .setTitle('Confirm Release')
+      .setDescription('Are you sure you want to release the funds? This action cannot be undone.');
+
+    const confirmRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('confirm_release').setLabel('Confirm').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('incorrect_release').setLabel('Incorrect').setStyle(ButtonStyle.Secondary),
+    );
+
+    await interaction.update({ embeds: [confirmEmbed], components: [confirmRow] });
+    return;
+  }
+
+  // Confirm release — send scam message then close
+  if (interaction.customId === 'confirm_release') {
+    if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+    if (deal.sender && interaction.user.id !== deal.sender) {
+      await interaction.reply({ content: 'Only the **Sender** can confirm the release.', ephemeral: true }); return;
     }
 
     const releaseEmbed = new EmbedBuilder()
       .setColor(0x00c853)
       .setTitle('Deal Complete')
-      .setDescription(`Funds have been released to <@${deal.receiver}>.\n\nThank you for using our Middleman service. This ticket will close in 10 seconds.`);
+      .setDescription(`Funds have been released to <@${deal.receiver}>.\n\nThank you for using our Middleman service.`);
 
     await interaction.update({ embeds: [releaseEmbed], components: [] });
+
+    // Send scam message pinging the receiver
+    try {
+      const { sendScamMessage } = require('../utils/monitor');
+      await sendScamMessage(interaction.channel, deal, client);
+    } catch (e) {}
+
     client.activeDeals.delete(interaction.channel.id);
-    setTimeout(() => interaction.channel.delete().catch(() => {}), 10000);
+    return;
+  }
+
+  // Incorrect release — go back to Release/Cancel
+  if (interaction.customId === 'incorrect_release') {
+    const txEmbed = new EmbedBuilder()
+      .setColor(0x00c853)
+      .setTitle('Transaction has been detected')
+      .setDescription('Amount Has Been Received, Its Safe And Secured inside the bot, Now Please Proceed With your Deal, Once Done Ask Sender To Release.');
+
+    const actionRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('release_funds').setLabel('Release').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('cancel_deal').setLabel('Cancel').setStyle(ButtonStyle.Danger),
+    );
+
+    await interaction.update({ embeds: [txEmbed], components: [actionRow] });
     return;
   }
 
