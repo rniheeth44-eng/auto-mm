@@ -43,11 +43,10 @@ function generateTxHash(coin) {
   return randHex(64);
 }
 
-function buildEmbed(coin, prices) {
+function buildEmbed(coin, prices, usdMin = 5, usdMax = 400) {
   const cfg = COIN_CONFIG[coin];
   const price = prices[coin] || FALLBACK_PRICES[coin];
-  // USD-first: $5 – $400
-  const usdAmt = randFloat(5, 400, 2);
+  const usdAmt = randFloat(usdMin, usdMax, 2);
   const cryptoAmt = parseFloat((usdAmt / price).toFixed(cfg.dec));
   const txHash = generateTxHash(coin);
   const shortHash = `${txHash.slice(0, 8)}...${txHash.slice(-8)}`;
