@@ -1,4 +1,5 @@
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require('discord.js');
+const path = require('path');
 
 async function spawnPanel(channel, guild) {
   const embed = new EmbedBuilder()
@@ -27,7 +28,10 @@ async function spawnPanel(channel, guild) {
 
   const row = new ActionRowBuilder().addComponents(select);
 
-  await channel.send({ embeds: [embed], components: [row] });
+  const welcomeFile = new AttachmentBuilder(path.join(__dirname, '../assets/welcome_small.gif'), { name: 'welcome.gif' });
+  embed.setImage('attachment://welcome.gif');
+
+  await channel.send({ embeds: [embed], components: [row], files: [welcomeFile] });
 }
 
 module.exports = { spawnPanel };
