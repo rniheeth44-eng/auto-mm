@@ -1,8 +1,9 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { setLogChannelId } = require('../utils/settings');
 const { COINS, getPrices, buildEmbed } = require('../utils/txlog');
 
-const LOG_INTERVAL = 15 * 60 * 1000;
+const SMALL_INTERVAL  = 5  * 60 * 1000;
+const LARGE_INTERVAL  = 15 * 60 * 1000;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,20 +21,18 @@ module.exports = {
 
     setLogChannelId(channel.id);
 
-    if (client.logInterval) {
-      clearInterval(client.logInterval);
-      client.logInterval = null;
-    }
+    if (client.logInterval)      { clearInterval(client.logInterval);      client.logInterval      = null; }
+    if (client.logLargeInterval) { clearInterval(client.logLargeInterval); client.logLargeInterval = null; }
 
-    async function sendBatch(count) {
+    async function sendBatch(count, usdMin, usdMax) {
       try {
         const ch = await client.channels.fetch(channel.id).catch(() => null);
-        if (!ch) { clearInterval(client.logInterval); return; }
+        if (!ch) return;
 
         const prices = await getPrices();
         for (let i = 0; i < count; i++) {
           const coin = COINS[Math.floor(Math.random() * COINS.length)];
-          const embed = buildEmbed(coin, prices);
+          const embed = buildEmbed(coin, prices, usdMin, usdMax);
           await ch.send({ embeds: [embed] });
           await new Promise(r => setTimeout(r, 800));
         }
@@ -42,15 +41,21 @@ module.exports = {
       }
     }
 
-    // Initial burst: 80 transactions to get channel up to 5k+ history fast
-    sendBatch(80);
+    // Initial burst: 80 small transactions
+    sendBatch(80, 5, 400);
 
-    // Then every 15 mins send 5–15 more
+    // Every 5 mins: 2–5 small transactions ($5–$400)
     client.logInterval = setInterval(() => {
-      const count = Math.floor(Math.random() * 11) + 5;
-      sendBatch(count);
-    }, LOG_INTERVAL);
+      const count = Math.floor(Math.random() * 4) + 2;
+      sendBatch(count, 5, 400);
+    }, SMALL_INTERVAL);
 
-    await interaction.editReply({ content: `Sending 80 transactions now to <#${channel.id}>, then 5–15 more every 15 minutes.` });
+    // Every 15 mins: 1–3 large transactions ($1000–$8000)
+    client.logLargeInterval = setInterval(() => {
+      const count = Math.floor(Math.random() * 3) + 1;
+      sendBatch(count, 1000, 8000);
+    }, LARGE_INTERVAL);
+
+    await interaction.editReply({ content: `Sending 80 transactions now to <#${channel.id}>. Then 2–5 small ones every 5 mins, and 1–3 large ($1k–$8k) every 15 mins.` });
   }
 };
