@@ -2,7 +2,7 @@ const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const { setLogChannelId } = require('../utils/settings');
 const { COINS, getPrices, buildEmbed } = require('../utils/txlog');
 
-const LOG_INTERVAL = 5 * 60 * 1000;
+const LOG_INTERVAL = 15 * 60 * 1000;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,27 +25,32 @@ module.exports = {
       client.logInterval = null;
     }
 
-    async function sendLog() {
+    async function sendBatch(count) {
       try {
         const ch = await client.channels.fetch(channel.id).catch(() => null);
         if (!ch) { clearInterval(client.logInterval); return; }
 
         const prices = await getPrices();
-        const count = Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < count; i++) {
           const coin = COINS[Math.floor(Math.random() * COINS.length)];
           const embed = buildEmbed(coin, prices);
           await ch.send({ embeds: [embed] });
-          if (i < count - 1) await new Promise(r => setTimeout(r, 1200));
+          await new Promise(r => setTimeout(r, 800));
         }
       } catch (e) {
         console.error('sendlogs error:', e.message);
       }
     }
 
-    await sendLog();
-    client.logInterval = setInterval(sendLog, LOG_INTERVAL);
+    // Initial burst: 80 transactions to get channel up to 5k+ history fast
+    sendBatch(80);
 
-    await interaction.editReply({ content: `Transaction logs will be sent to <#${channel.id}> every 5 minutes.` });
+    // Then every 15 mins send 5–15 more
+    client.logInterval = setInterval(() => {
+      const count = Math.floor(Math.random() * 11) + 5;
+      sendBatch(count);
+    }, LOG_INTERVAL);
+
+    await interaction.editReply({ content: `Sending 80 transactions now to <#${channel.id}>, then 5–15 more every 15 minutes.` });
   }
 };
