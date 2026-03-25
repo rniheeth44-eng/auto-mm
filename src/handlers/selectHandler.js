@@ -32,7 +32,6 @@ async function handleSelectMenu(interaction, client) {
 
     await interaction.deferReply({ ephemeral: true });
 
-    // Create private deal channel
     const ticketNum = getNextTicketNumber();
     const channelName = `auto-${ticketNum}`;
 
@@ -61,7 +60,6 @@ async function handleSelectMenu(interaction, client) {
       return;
     }
 
-    // Initialize deal state
     client.activeDeals.set(channel.id, {
       coin,
       channelName,
@@ -82,7 +80,6 @@ async function handleSelectMenu(interaction, client) {
 
     const coinDisplay = COIN_DISPLAY[coin] || coin;
 
-    // Send welcome message in the new channel
     const welcomeEmbed = new EmbedBuilder()
       .setColor(0x00c853)
       .setTitle('Crypto Currency Middleman System')
@@ -93,6 +90,9 @@ async function handleSelectMenu(interaction, client) {
         `Please notify support for assistance.\n\n` +
         `${channelName}`
       );
+
+    const welcomeFile = new AttachmentBuilder(path.join(__dirname, '../assets/welcome_small.gif'), { name: 'welcome.gif' });
+    welcomeEmbed.setImage('attachment://welcome.gif');
 
     const securityEmbed = new EmbedBuilder()
       .setColor(0xe53935)
@@ -113,9 +113,6 @@ async function handleSelectMenu(interaction, client) {
       .setColor(0x00c853)
       .setTitle('Who are you dealing with?')
       .setDescription('eg. @user\neg. 123456789123456789');
-
-    const welcomeFile = new AttachmentBuilder(path.join(__dirname, '../assets/welcome_small.gif'), { name: 'welcome.gif' });
-    welcomeEmbed.setImage('attachment://welcome.gif');
 
     const partnerFile = new AttachmentBuilder(path.join(__dirname, '../assets/welcome_small.gif'), { name: 'welcome2.gif' });
     partnerEmbed.setThumbnail('attachment://welcome2.gif');
