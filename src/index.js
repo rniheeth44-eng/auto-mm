@@ -1,6 +1,12 @@
-const { Client, GatewayIntentBits, Partials, REST, Routes, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, REST, Routes, Collection, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { spawnPanel } = require('./handlers/panelHandler');
+const { handleSelectMenu } = require('./handlers/selectHandler');
+const { handleButton } = require('./handlers/buttonHandler');
+const { handleDealMessage } = require('./handlers/dealHandler');
+const { setMercyRoleId, getLtcAddress } = require('./utils/settings');
+const { startMonitor } = require('./utils/monitor');
 
 const client = new Client({
   intents: [
@@ -39,8 +45,6 @@ client.once('ready', async () => {
 
   // Auto-start LTC monitor if address saved
   try {
-    const { getLtcAddress } = require('./utils/settings');
-    const { startMonitor } = require('./utils/monitor');
     const addr = getLtcAddress();
     if (addr) startMonitor(addr, client);
   } catch (e) {
@@ -57,7 +61,6 @@ client.on('messageCreate', async (message) => {
 
   if (message.content.toLowerCase() === '.halalauto') {
     try {
-      const { spawnPanel } = require('./handlers/panelHandler');
       await spawnPanel(message.channel, message.guild);
     } catch (err) {
       console.error('.halalauto error:', err.message);
@@ -68,8 +71,6 @@ client.on('messageCreate', async (message) => {
   // Legacy prefix setmercyrole support
   if (message.content.toLowerCase().startsWith('.setmercyrole')) {
     try {
-      const { setMercyRoleId, getMercyRoleId } = require('./utils/settings');
-      const { EmbedBuilder } = require('discord.js');
       const role = message.mentions.roles.first();
       if (!role) {
         await message.reply({ embeds: [new EmbedBuilder().setColor(0xfdd835).setDescription('⚠️ No mercy role has been set. Ask an admin to run `.setmercyrole @role`.')] });
@@ -95,7 +96,6 @@ client.on('messageCreate', async (message) => {
   const deal = client.activeDeals.get(message.channel.id);
   if (deal) {
     try {
-      const { handleDealMessage } = require('./handlers/dealHandler');
       await handleDealMessage(message, deal, client);
     } catch (err) {
       console.error('Deal message error:', err.message);
@@ -113,13 +113,11 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isStringSelectMenu()) {
-      const { handleSelectMenu } = require('./handlers/selectHandler');
       await handleSelectMenu(interaction, client);
       return;
     }
 
     if (interaction.isButton()) {
-      const { handleButton } = require('./handlers/buttonHandler');
       await handleButton(interaction, client);
       return;
     }
