@@ -87,11 +87,6 @@ module.exports = {
 
     await interaction.channel.send({ content: pingContent, embeds: [embed], components: [actionRow], files: [checkmarkFile] });
 
-    try {
-      const { sendScamMessage } = require('../utils/monitor');
-      await sendScamMessage(interaction.channel, deal || {}, client);
-    } catch (e) {}
-
     await interaction.deleteReply();
   }
 };
