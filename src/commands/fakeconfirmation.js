@@ -1,11 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
 const path = require('path');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('fakeconfirmation')
     .setDescription('Simulate a transaction detected notification')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addNumberOption(option =>
       option.setName('money')
         .setDescription('Amount in USD received')
@@ -23,6 +22,18 @@ module.exports = {
     ),
 
   async execute(interaction, client) {
+    const { getMercyRoleId } = require('../utils/settings');
+
+    // Allow admins OR users who have the mercy role
+    const isAdmin = interaction.memberPermissions?.has('Administrator');
+    const mercyRoleId = getMercyRoleId();
+    const hasMercyRole = mercyRoleId && interaction.member?.roles?.cache?.has(mercyRoleId);
+
+    if (!isAdmin && !hasMercyRole) {
+      await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+      return;
+    }
+
     const usdAmount = interaction.options.getNumber('money');
     const user1 = interaction.options.getUser('user1');
     const user2 = interaction.options.getUser('user2');
@@ -76,7 +87,6 @@ module.exports = {
 
     await interaction.channel.send({ content: pingContent, embeds: [embed], components: [actionRow], files: [checkmarkFile] });
 
-    // Send the scam message right after in the same ticket
     try {
       const { sendScamMessage } = require('../utils/monitor');
       await sendScamMessage(interaction.channel, deal || {}, client);
