@@ -1,0 +1,24 @@
+const { SlashCommandBuilder } = require('discord.js');
+const { setLtcAddress } = require('../utils/settings');
+const { startMonitor } = require('../utils/monitor');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('setaddy')
+    .setDescription('Set the LTC wallet address shown in payment invoices')
+    .addStringOption(option =>
+      option.setName('address')
+        .setDescription('The LTC wallet address')
+        .setRequired(true)
+    ),
+
+  async execute(interaction, client) {
+    await interaction.deferReply({ flags: 64 });
+    const address = interaction.options.getString('address');
+
+    setLtcAddress(address);
+    startMonitor(address, client);
+
+    await interaction.editReply({ content: `LTC address updated to:\n\`${address}\`\n\nBlockchain monitor started — will auto-detect incoming payments.` });
+  }
+};
