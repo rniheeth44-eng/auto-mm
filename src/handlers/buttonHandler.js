@@ -30,6 +30,9 @@ async function handleButton(interaction, client) {
   // Release funds — show confirm/incorrect first
   if (interaction.customId === 'release_funds') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+    if (deal.receiver && interaction.user.id === deal.receiver) {
+      await interaction.reply({ content: 'The **Receiver** cannot release the funds.', ephemeral: true }); return;
+    }
     if (deal.sender && interaction.user.id !== deal.sender) {
       await interaction.reply({ content: 'Only the **Sender** can release the funds.', ephemeral: true }); return;
     }
@@ -51,6 +54,9 @@ async function handleButton(interaction, client) {
   // Confirm release — send scam message then close
   if (interaction.customId === 'confirm_release') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
+    if (deal.receiver && interaction.user.id === deal.receiver) {
+      await interaction.reply({ content: 'The **Receiver** cannot confirm the release.', ephemeral: true }); return;
+    }
     if (deal.sender && interaction.user.id !== deal.sender) {
       await interaction.reply({ content: 'Only the **Sender** can confirm the release.', ephemeral: true }); return;
     }
