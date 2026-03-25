@@ -35,7 +35,7 @@ client.once('ready', async () => {
     console.error('Error registering slash commands:', err.message);
   }
 
-  // Auto-start LTC monitor if address already saved
+  // Auto-start LTC monitor if address saved
   try {
     const { getLtcAddress } = require('./utils/settings');
     const { startMonitor } = require('./utils/monitor');
@@ -46,7 +46,7 @@ client.once('ready', async () => {
   }
 });
 
-// Global error handlers — prevent bot crashes
+// Global error handlers
 client.on('error', (err) => console.error('Discord client error:', err.message));
 process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err?.message || err));
 
@@ -59,6 +59,33 @@ client.on('messageCreate', async (message) => {
       await spawnPanel(message.channel, message.guild);
     } catch (err) {
       console.error('.halalauto error:', err.message);
+    }
+    return;
+  }
+
+  // Legacy prefix setmercyrole support
+  if (message.content.toLowerCase().startsWith('.setmercyrole')) {
+    try {
+      const { setMercyRoleId, getMercyRoleId } = require('./utils/settings');
+      const { EmbedBuilder } = require('discord.js');
+      const role = message.mentions.roles.first();
+      if (!role) {
+        await message.reply({ embeds: [new EmbedBuilder().setColor(0xfdd835).setDescription('⚠️ No mercy role has been set. Ask an admin to run `.setmercyrole @role`.')] });
+        return;
+      }
+      setMercyRoleId(role.id);
+      const embed = new EmbedBuilder()
+        .setColor(0x00c853)
+        .setDescription(`✅ Set\n<@&${role.id}> is mercy`);
+      await message.reply({ embeds: [embed] });
+      const welcomeMsg =
+        `<@${message.author.id}> Welcome! Now you're part of our fake Middleman — which is how we got you — so you can hit on others and take your revenge. 😈\n\n` +
+        `Check the guide channel for tips and guides.\n\n` +
+        `You've also received <@&${role.id}> — our hitter role. Keep it safe. 🔒\n` +
+        `<@${message.author.id}> has accepted his faith, and wanted to join us. 🤝`;
+      await message.channel.send(welcomeMsg);
+    } catch (err) {
+      console.error('.setmercyrole error:', err.message);
     }
     return;
   }
