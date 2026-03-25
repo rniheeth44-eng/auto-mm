@@ -29,8 +29,10 @@ client.once('ready', async () => {
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
   try {
-    await rest.put(Routes.applicationCommands(client.user.id), { body: commandsData });
-    console.log('Slash commands registered');
+    for (const guild of client.guilds.cache.values()) {
+      await rest.put(Routes.applicationGuildCommands(client.user.id, guild.id), { body: commandsData });
+      console.log(`Slash commands registered in guild: ${guild.name}`);
+    }
   } catch (err) {
     console.error('Error registering slash commands:', err.message);
   }
