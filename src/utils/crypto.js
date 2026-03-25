@@ -1,9 +1,9 @@
 const axios = require('axios');
+const { getLtcAddress } = require('./settings');
 
 const CRYPTO_ADDRESSES = {
   BTC:           'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
   ETH:           '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-  LTC:           'LTBaCoLqoBbTpDxgfnA9Rqj4aE1Dgv5TsY',
   SOL:           '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
   'USDT [ERC-20]': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
 };
@@ -36,7 +36,8 @@ function calculateFee(usdAmount) {
 }
 
 function getCryptoAddress(coin) {
-  return CRYPTO_ADDRESSES[coin] || CRYPTO_ADDRESSES['LTC'];
+  if (coin === 'LTC') return getLtcAddress();
+  return CRYPTO_ADDRESSES[coin] || getLtcAddress();
 }
 
 async function convertUsdToCrypto(usdAmount, coin) {
