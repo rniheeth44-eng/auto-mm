@@ -1,12 +1,5 @@
 const axios = require('axios');
-const { getLtcAddress } = require('./settings');
-
-const CRYPTO_ADDRESSES = {
-  BTC:           'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-  ETH:           '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-  SOL:           '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
-  'USDT [ERC-20]': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-};
+const { getLtcAddress, getBtcAddress, getEthAddress, getSolAddress, getUsdtAddress } = require('./settings');
 
 const COINGECKO_IDS = {
   BTC:           'bitcoin',
@@ -37,13 +30,16 @@ function calculateFee(usdAmount) {
 
 function getCryptoAddress(coin) {
   if (coin === 'LTC') return getLtcAddress();
-  return CRYPTO_ADDRESSES[coin] || getLtcAddress();
+  if (coin === 'BTC') return getBtcAddress() || 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
+  if (coin === 'ETH') return getEthAddress() || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
+  if (coin === 'SOL') return getSolAddress() || '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
+  if (coin === 'USDT [ERC-20]') return getUsdtAddress() || getEthAddress() || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
+  return getLtcAddress();
 }
 
 async function convertUsdToCrypto(usdAmount, coin) {
   const price = await getCryptoPrice(coin);
   let fee = calculateFee(usdAmount);
-  // USDT subcharge
   if (coin === 'USDT [ERC-20]') fee += 1;
   const totalUsd = usdAmount + fee;
 
