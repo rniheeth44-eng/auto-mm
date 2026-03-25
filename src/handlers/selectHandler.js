@@ -5,7 +5,9 @@ const {
   ButtonStyle,
   PermissionFlagsBits,
   ChannelType,
+  AttachmentBuilder,
 } = require('discord.js');
+const path = require('path');
 
 let ticketCounter = 0;
 
@@ -112,9 +114,15 @@ async function handleSelectMenu(interaction, client) {
       .setTitle('Who are you dealing with?')
       .setDescription('eg. @user\neg. 123456789123456789');
 
-    await channel.send({ content: `<@${user.id}>`, embeds: [welcomeEmbed] });
+    const welcomeFile = new AttachmentBuilder(path.join(__dirname, '../assets/welcome.gif'), { name: 'welcome.gif' });
+    welcomeEmbed.setImage('attachment://welcome.gif');
+
+    const partnerFile = new AttachmentBuilder(path.join(__dirname, '../assets/welcome.gif'), { name: 'welcome2.gif' });
+    partnerEmbed.setThumbnail('attachment://welcome2.gif');
+
+    await channel.send({ content: `<@${user.id}>`, embeds: [welcomeEmbed], files: [welcomeFile] });
     await channel.send({ embeds: [securityEmbed], components: [closeRow] });
-    await channel.send({ embeds: [partnerEmbed] });
+    await channel.send({ embeds: [partnerEmbed], files: [partnerFile] });
   }
 }
 
