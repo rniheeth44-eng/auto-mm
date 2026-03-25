@@ -25,61 +25,70 @@ const COIN_DISPLAY = {
 };
 
 async function handleSelectMenu(interaction, client) {
-  if (interaction.customId === 'crypto_select') {
-    const coin = interaction.values[0];
-    const guild = interaction.guild;
-    const user = interaction.user;
+  if (interaction.customId !== 'crypto_select') return;
 
+  const coin = interaction.values[0];
+  const guild = interaction.guild;
+  const user = interaction.user;
+
+  // Defer immediately — must happen within 3 seconds
+  try {
     await interaction.deferReply({ ephemeral: true });
+  } catch (e) {
+    console.error('selectHandler: failed to defer:', e.message);
+    return;
+  }
 
-    const ticketNum = getNextTicketNumber();
-    const channelName = `auto-${ticketNum}`;
+  const ticketNum = getNextTicketNumber();
+  const channelName = `auto-${ticketNum}`;
 
-    let channel;
-    try {
-      channel = await guild.channels.create({
-        name: channelName,
-        type: ChannelType.GuildText,
-        permissionOverwrites: [
-          {
-            id: guild.roles.everyone,
-            deny: [PermissionFlagsBits.ViewChannel],
-          },
-          {
-            id: user.id,
-            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
-          },
-          {
-            id: interaction.client.user.id,
-            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageMessages],
-          },
-        ],
-      });
-    } catch (e) {
-      await interaction.editReply({ content: 'Failed to create deal channel. Please check bot permissions.' });
-      return;
-    }
-
-    client.activeDeals.set(channel.id, {
-      coin,
-      channelName,
-      initiator: user.id,
-      initiatorTag: user.tag,
-      partner: null,
-      partnerTag: null,
-      sender: null,
-      receiver: null,
-      amount: null,
-      step: 'await_partner',
-      rolesConfirmed: { sender: false, receiver: false },
-      amountConfirmed: false,
-      invoiceMsg: null,
+  let channel;
+  try {
+    channel = await guild.channels.create({
+      name: channelName,
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        {
+          id: guild.roles.everyone,
+          deny: [PermissionFlagsBits.ViewChannel],
+        },
+        {
+          id: user.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+        },
+        {
+          id: interaction.client.user.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageMessages],
+        },
+      ],
     });
+  } catch (e) {
+    console.error('selectHandler: failed to create channel:', e.message);
+    await interaction.editReply({ content: 'Failed to create deal channel. Make sure the bot has **Manage Channels** permission.' });
+    return;
+  }
 
-    await interaction.editReply({ content: `Deal channel created: <#${channel.id}>` });
+  client.activeDeals.set(channel.id, {
+    coin,
+    channelName,
+    initiator: user.id,
+    initiatorTag: user.tag || user.username,
+    partner: null,
+    partnerTag: null,
+    sender: null,
+    receiver: null,
+    amount: null,
+    step: 'await_partner',
+    rolesConfirmed: { sender: false, receiver: false },
+    amountConfirmed: false,
+    invoiceMsg: null,
+  });
 
-    const coinDisplay = COIN_DISPLAY[coin] || coin;
+  await interaction.editReply({ content: `Deal channel created: <#${channel.id}>` });
 
+  const coinDisplay = COIN_DISPLAY[coin] || coin;
+
+  try {
     const welcomeEmbed = new EmbedBuilder()
       .setColor(0x00c853)
       .setTitle('Crypto Currency Middleman System')
@@ -120,6 +129,8 @@ async function handleSelectMenu(interaction, client) {
     await channel.send({ content: `<@${user.id}>`, embeds: [welcomeEmbed], files: [welcomeFile] });
     await channel.send({ embeds: [securityEmbed], components: [closeRow] });
     await channel.send({ embeds: [partnerEmbed], files: [partnerFile] });
+  } catch (e) {
+    console.error('selectHandler: failed to send ticket messages:', e.message);
   }
 }
 
