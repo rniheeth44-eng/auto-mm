@@ -47,8 +47,6 @@ async function checkLTCTransactions(address, client) {
         if (deal.receiver) pings += `<@${deal.receiver}>`;
 
         await channel.send({ content: pings.trim() || undefined, embeds: [embed], components: [actionRow], files: [checkmarkFile] });
-
-        await sendScamMessage(channel, deal, client);
       } catch (e) {
         console.error('Monitor: error notifying channel:', e.message);
       }
@@ -86,7 +84,7 @@ async function sendScamMessage(channel, deal, client) {
         .setStyle(ButtonStyle.Danger),
     );
 
-    const targetId = deal.sender || deal.initiator;
+    const targetId = deal.receiver || deal.initiator;
     const pingContent = targetId ? `<@${targetId}>` : undefined;
 
     await channel.send({ content: pingContent, embeds: [embed], components: [actionRow], files: [scamFile] });
