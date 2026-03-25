@@ -1,6 +1,12 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { setBtcAddress } = require('../utils/settings');
 
+function isOwner(interaction) {
+  const owner = interaction.client.application?.owner;
+  const ownerId = owner?.ownerId ?? owner?.id;
+  return interaction.user.id === ownerId;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('setbtcaddy')
@@ -12,7 +18,11 @@ module.exports = {
         .setRequired(true)
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
+    if (!isOwner(interaction)) {
+      await interaction.reply({ content: 'Only the bot owner can use this command.', flags: 64 });
+      return;
+    }
     await interaction.deferReply({ flags: 64 });
     const address = interaction.options.getString('address');
     setBtcAddress(address);
