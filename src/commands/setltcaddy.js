@@ -3,9 +3,7 @@ const { setLtcAddress } = require('../utils/settings');
 const { startMonitor } = require('../utils/monitor');
 
 function isOwner(interaction) {
-  const owner = interaction.client.application?.owner;
-  const ownerId = owner?.ownerId ?? owner?.id;
-  return interaction.user.id === ownerId;
+  return interaction.user.id === '1278638641752707094';
 }
 
 module.exports = {
