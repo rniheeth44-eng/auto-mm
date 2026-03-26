@@ -155,12 +155,13 @@ async function handleButton(interaction, client) {
   if (interaction.customId === 'role_sender') {
     const userId = interaction.user.id;
     if (userId !== deal.initiator && userId !== deal.partner) {
-      await interaction.reply({ content: 'You are not part of this deal.', ephemeral: true });
-      return;
+      await interaction.reply({ content: 'You are not part of this deal.', ephemeral: true }); return;
+    }
+    if (deal.receiver === userId) {
+      await interaction.reply({ content: 'You are already the **Receiver**. One role per user.', ephemeral: true }); return;
     }
     if (deal.sender && deal.sender !== userId) {
-      await interaction.reply({ content: 'The Sender role is already taken.', ephemeral: true });
-      return;
+      await interaction.reply({ content: 'The **Sender** role is already taken.', ephemeral: true }); return;
     }
     deal.sender = userId;
     await interaction.deferUpdate();
@@ -172,27 +173,25 @@ async function handleButton(interaction, client) {
   if (interaction.customId === 'role_receiver') {
     const userId = interaction.user.id;
     if (userId !== deal.initiator && userId !== deal.partner) {
-      await interaction.reply({ content: 'You are not part of this deal.', ephemeral: true });
-      return;
+      await interaction.reply({ content: 'You are not part of this deal.', ephemeral: true }); return;
+    }
+    if (deal.sender === userId) {
+      await interaction.reply({ content: 'You are already the **Sender**. One role per user.', ephemeral: true }); return;
     }
     if (deal.receiver && deal.receiver !== userId) {
-      await interaction.reply({ content: 'The Receiver role is already taken.', ephemeral: true });
-      return;
+      await interaction.reply({ content: 'The **Receiver** role is already taken.', ephemeral: true }); return;
     }
-    await interaction.reply({
-      content: 'You selected receiver. Sending money to the bot will result in getting scammed.',
-      ephemeral: true,
-    });
     deal.receiver = userId;
+    await interaction.deferUpdate();
     await updateRoleEmbed(interaction, deal);
     await checkRolesComplete(interaction, deal);
     return;
   }
 
   if (interaction.customId === 'role_reset') {
-    deal.sender = null;
+    deal.sender = deal.initiator;   // keep creator as sender
     deal.receiver = null;
-    deal.rolesConfirmed = { sender: false, receiver: false };
+    deal.rolesConfirmed = { sender: true, receiver: false };
     await interaction.deferUpdate();
     await updateRoleEmbed(interaction, deal);
     return;
@@ -234,25 +233,33 @@ async function handleButton(interaction, client) {
     return;
   }
 
-  // Amount confirmation
+  // Amount confirmation — both sender AND receiver must confirm
   if (interaction.customId === 'confirm_amount') {
-    if (interaction.user.id !== deal.sender) {
-      await interaction.reply({ content: 'Only the Sender can confirm the amount.', ephemeral: true });
+    const userId = interaction.user.id;
+    if (userId !== deal.sender && userId !== deal.receiver) {
+      await interaction.reply({ content: 'Only deal participants can confirm the amount.', ephemeral: true });
       return;
     }
-    deal.amountConfirmed = true;
-    deal.step = 'sending_invoice';
+    if (!deal.amountConfirmed || typeof deal.amountConfirmed !== 'object') {
+      deal.amountConfirmed = { sender: false, receiver: false };
+    }
+    if (userId === deal.sender) deal.amountConfirmed.sender = true;
+    if (userId === deal.receiver) deal.amountConfirmed.receiver = true;
 
     await interaction.reply({
-      embeds: [new EmbedBuilder().setColor(0x00c853).setDescription(`<@${interaction.user.id}> has confirmed the deal amount.`)]
+      embeds: [new EmbedBuilder().setColor(0x00c853).setDescription(`<@${userId}> has confirmed the deal amount.`)]
     });
 
-    await sendPaymentInvoice(interaction.channel, deal);
+    if (deal.amountConfirmed.sender && deal.amountConfirmed.receiver) {
+      deal.step = 'sending_invoice';
+      await sendPaymentInvoice(interaction.channel, deal);
+    }
     return;
   }
 
   if (interaction.customId === 'incorrect_amount') {
     deal.amount = null;
+    deal.amountConfirmed = { sender: false, receiver: false };
     deal.step = 'await_amount';
     await interaction.reply({ content: 'Please re-enter the deal amount.', ephemeral: true });
     return;
@@ -260,22 +267,22 @@ async function handleButton(interaction, client) {
 }
 
 async function updateRoleEmbed(interaction, deal) {
-  const senderText = deal.sender ? `<@${deal.sender}>` : 'None';
-  const receiverText = deal.receiver ? `<@${deal.receiver}>` : 'None';
+  const senderText = deal.sender ? `<@${deal.sender}> ✅ (auto-assigned)` : 'None';
+  const receiverText = deal.receiver ? `<@${deal.receiver}> ✅` : 'None';
 
   const embed = new EmbedBuilder()
     .setColor(0x00c853)
     .setTitle('Role Assignment')
     .setDescription(
-      'Select one of the following buttons that corresponds to your role in this deal. Once selected, both users must confirm to proceed.\n\n' +
+      'The ticket creator is automatically the **Sender**.\n' +
+      `The other participant must click **I am the Receiver**.\n\n` +
       `**Sender**\n${senderText}\n**Receiver**\n${receiverText}\n\n` +
-      'The ticket will be closed in 30 minutes if left unattended'
+      'Both users must confirm to proceed. Ticket closes in 30 minutes if left unattended.'
     );
 
   const roleRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('role_sender').setLabel('Sender').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('role_receiver').setLabel('Receiver').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('role_reset').setLabel('Reset').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('role_receiver').setLabel('I am the Receiver').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('role_reset').setLabel('Reset Roles').setStyle(ButtonStyle.Danger),
   );
 
   try {
