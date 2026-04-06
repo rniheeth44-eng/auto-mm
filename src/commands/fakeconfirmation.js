@@ -5,6 +5,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('fakeconfirmation')
     .setDescription('Simulate a transaction detected notification')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addNumberOption(option =>
       option.setName('money')
         .setDescription('Amount in USD received')
