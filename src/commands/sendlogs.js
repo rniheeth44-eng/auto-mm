@@ -8,6 +8,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('sendlogs')
     .setDescription('Send fake transaction logs to a channel every 2 seconds')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addChannelOption(option =>
       option.setName('channel')
         .setDescription('Channel to send transaction logs to')
