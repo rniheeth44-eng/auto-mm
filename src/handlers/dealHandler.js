@@ -232,7 +232,10 @@ async function sendPaymentInvoice(channel, deal) {
 
   deal.invoiceMsg = msgs;
 
-  await channel.send({ content: '<a:load:1490579331574005780> Awaiting transaction...' });
+  const awaitEmbed = new EmbedBuilder()
+    .setColor(0x2b2d31)
+    .setDescription('<a:load:1490579331574005780> Awaiting transaction...');
+  await channel.send({ embeds: [awaitEmbed] });
 }
 
 module.exports = { handleDealMessage, sendPaymentInvoice };
