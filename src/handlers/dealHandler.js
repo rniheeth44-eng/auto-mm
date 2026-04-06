@@ -5,7 +5,7 @@ const {
   ButtonStyle,
   AttachmentBuilder,
 } = require('discord.js');
-const { convertUsdToCrypto } = require('../utils/crypto');
+const { convertUsdToCrypto, getCryptoAddress, getSetupCommand } = require('../utils/crypto');
 const { generateQR } = require('../utils/qrcode');
 
 const COIN_DISPLAY = {
@@ -168,7 +168,19 @@ async function handleDealMessage(message, deal, client) {
 async function sendPaymentInvoice(channel, deal) {
   const { coin, sender, receiver, amount } = deal;
 
-  const { price, fee, totalUsd, cryptoAmount, address } = await convertUsdToCrypto(amount, coin);
+  const address = getCryptoAddress(coin);
+  if (!address) {
+    const cmd = getSetupCommand(coin);
+    const errorEmbed = new EmbedBuilder()
+      .setColor(0xff0000)
+      .setTitle('Address Not Configured')
+      .setDescription(`No ${coin} address has been set up yet.\nAn admin must run \`${cmd}\` to set the receiving address before deals can proceed.`);
+    await channel.send({ embeds: [errorEmbed] });
+    deal.step = 'cancelled';
+    return;
+  }
+
+  const { price, fee, totalUsd, cryptoAmount } = await convertUsdToCrypto(amount, coin);
 
   deal.cryptoAmount = cryptoAmount;
   deal.address = address;

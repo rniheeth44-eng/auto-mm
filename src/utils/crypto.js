@@ -28,13 +28,25 @@ function calculateFee(usdAmount) {
   return usdAmount * 0.01;
 }
 
+const SETUP_COMMANDS = {
+  LTC: '/setltcaddy',
+  BTC: '/setbtcaddy',
+  ETH: '/setethaddy',
+  SOL: '/setsoladdy',
+  'USDT [ERC-20]': '/setusdtaddy',
+};
+
 function getCryptoAddress(coin) {
-  if (coin === 'LTC') return getLtcAddress();
-  if (coin === 'BTC') return getBtcAddress() || 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
-  if (coin === 'ETH') return getEthAddress() || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
-  if (coin === 'SOL') return getSolAddress() || '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
-  if (coin === 'USDT [ERC-20]') return getUsdtAddress() || getEthAddress() || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
-  return getLtcAddress();
+  if (coin === 'LTC') return getLtcAddress() || null;
+  if (coin === 'BTC') return getBtcAddress() || null;
+  if (coin === 'ETH') return getEthAddress() || null;
+  if (coin === 'SOL') return getSolAddress() || null;
+  if (coin === 'USDT [ERC-20]') return getUsdtAddress() || null;
+  return null;
+}
+
+function getSetupCommand(coin) {
+  return SETUP_COMMANDS[coin] || null;
 }
 
 async function convertUsdToCrypto(usdAmount, coin) {
@@ -51,4 +63,4 @@ async function convertUsdToCrypto(usdAmount, coin) {
   return { price, fee, totalUsd, cryptoAmount, address: getCryptoAddress(coin) };
 }
 
-module.exports = { getCryptoPrice, calculateFee, getCryptoAddress, convertUsdToCrypto };
+module.exports = { getCryptoPrice, calculateFee, getCryptoAddress, getSetupCommand, convertUsdToCrypto };
