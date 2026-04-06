@@ -216,6 +216,8 @@ async function sendPaymentInvoice(channel, deal) {
   }
 
   deal.invoiceMsg = msgs;
+
+  await channel.send({ content: '<a:load:1490579331574005780> Awaiting transaction...' });
 }
 
 module.exports = { handleDealMessage, sendPaymentInvoice };
