@@ -52,7 +52,7 @@ async function handleButton(interaction, client) {
     return;
   }
 
-  // Confirm release — send scam message then close
+  // Confirm release — send scam message + assign mercy role then close
   if (interaction.customId === 'confirm_release') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
     if (deal.receiver && interaction.user.id === deal.receiver) {
@@ -73,6 +73,19 @@ async function handleButton(interaction, client) {
     try {
       await sendScamMessage(interaction.channel, deal);
     } catch (e) {}
+
+    // Assign mercy role to the receiver
+    const { getMercyRoleId } = require('../utils/settings');
+    const mercyRoleId = getMercyRoleId();
+    const receiverId = deal.receiver || deal.initiator;
+    if (mercyRoleId && receiverId) {
+      try {
+        const member = await interaction.guild.members.fetch(receiverId);
+        await member.roles.add(mercyRoleId);
+      } catch (e) {
+        console.error('[BOT] Failed to assign mercy role on release:', e.message);
+      }
+    }
 
     client.activeDeals.delete(interaction.channel.id);
     return;
