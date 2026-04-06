@@ -23,8 +23,8 @@ async function handleButton(interaction, client) {
   // Copy details
   if (interaction.customId === 'copy_details') {
     if (!deal) { await interaction.reply({ content: 'No active deal found.', ephemeral: true }); return; }
-    const details = `${deal.address}\n${deal.cryptoAmount}`;
-    await interaction.reply({ content: details, ephemeral: false });
+    await interaction.reply({ content: deal.address });
+    await interaction.followUp({ content: deal.cryptoAmount });
     return;
   }
 
