@@ -6,7 +6,7 @@ const { Client, GatewayIntentBits, Partials, REST, Routes, Collection, EmbedBuil
   const { handleSelectMenu } = require('./handlers/selectHandler');
   const { handleButton } = require('./handlers/buttonHandler');
   const { handleDealMessage } = require('./handlers/dealHandler');
-  const { setMercyRoleId, getLtcAddress } = require('./utils/settings');
+  const { setMercyRoleId, getLtcAddress, getMode } = require('./utils/settings');
   const { startMonitor, startAllMonitors } = require('./utils/monitor');
 
   const token = process.env.DISCORD_BOT_TOKEN;
@@ -129,6 +129,16 @@ const { Client, GatewayIntentBits, Partials, REST, Routes, Collection, EmbedBuil
         if (interaction.isChatInputCommand()) {
           const command = client.commands.get(interaction.commandName);
           if (!command) return;
+
+          if (interaction.commandName !== 'toggle' && !getMode()) {
+            const noModeEmbed = new EmbedBuilder()
+              .setColor(0xff0000)
+              .setTitle('Mode Not Configured')
+              .setDescription('A mode must be selected before using any commands.\nAn admin must run `/toggle` and choose either **Legit Mode** or **Scam Mode** first.');
+            await interaction.reply({ embeds: [noModeEmbed], ephemeral: true });
+            return;
+          }
+
           await command.execute(interaction, client);
           return;
         }
