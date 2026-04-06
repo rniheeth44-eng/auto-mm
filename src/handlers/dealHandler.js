@@ -105,16 +105,16 @@ async function handleDealMessage(message, deal, client) {
       .setColor(0x00c853)
       .setTitle('Role Assignment')
       .setDescription(
-        'The ticket creator has been automatically assigned as **Sender**.\n' +
-        `<@${partnerId}> please click **I am the Receiver** to confirm your role.\n\n` +
-        `**Sender** ✅\n<@${deal.sender}> (auto-assigned)\n` +
-        `**Receiver**\nNone\n\n` +
-        'Both users must confirm to proceed. Ticket closes in 30 minutes if left unattended.'
+        'Select one of the following buttons that corresponds to your role in this deal. Once selected, both users must confirm to proceed.\n\n' +
+        `**Sender**\n${deal.sender ? `<@${deal.sender}>` : 'None'}\n` +
+        `**Receiver**\n${deal.receiver ? `<@${deal.receiver}>` : 'None'}\n\n` +
+        'The ticket will be closed in 30 minutes if left unattended'
       );
 
     const roleRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('role_receiver').setLabel('I am the Receiver').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('role_reset').setLabel('Reset Roles').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('role_sender').setLabel('Sender').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('role_receiver').setLabel('Receiver').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('role_reset').setLabel('Reset').setStyle(ButtonStyle.Danger),
     );
 
     await channel.send({ embeds: [addedEmbed] });

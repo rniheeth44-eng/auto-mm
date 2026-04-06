@@ -16,7 +16,7 @@ const { Client, GatewayIntentBits, Partials, REST, Routes, Collection, EmbedBuil
   }
 
   // ── HTTP keepalive server (required by Render to stay alive) ─────────────
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3001;
   const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is online!');

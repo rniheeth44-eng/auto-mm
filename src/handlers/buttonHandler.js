@@ -189,9 +189,9 @@ async function handleButton(interaction, client) {
   }
 
   if (interaction.customId === 'role_reset') {
-    deal.sender = deal.initiator;   // keep creator as sender
+    deal.sender = null;
     deal.receiver = null;
-    deal.rolesConfirmed = { sender: true, receiver: false };
+    deal.rolesConfirmed = { sender: false, receiver: false };
     await interaction.deferUpdate();
     await updateRoleEmbed(interaction, deal);
     return;
@@ -267,22 +267,22 @@ async function handleButton(interaction, client) {
 }
 
 async function updateRoleEmbed(interaction, deal) {
-  const senderText = deal.sender ? `<@${deal.sender}> ✅ (auto-assigned)` : 'None';
-  const receiverText = deal.receiver ? `<@${deal.receiver}> ✅` : 'None';
+  const senderText = deal.sender ? `<@${deal.sender}>` : 'None';
+  const receiverText = deal.receiver ? `<@${deal.receiver}>` : 'None';
 
   const embed = new EmbedBuilder()
     .setColor(0x00c853)
     .setTitle('Role Assignment')
     .setDescription(
-      'The ticket creator is automatically the **Sender**.\n' +
-      `The other participant must click **I am the Receiver**.\n\n` +
+      'Select one of the following buttons that corresponds to your role in this deal. Once selected, both users must confirm to proceed.\n\n' +
       `**Sender**\n${senderText}\n**Receiver**\n${receiverText}\n\n` +
-      'Both users must confirm to proceed. Ticket closes in 30 minutes if left unattended.'
+      'The ticket will be closed in 30 minutes if left unattended'
     );
 
   const roleRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('role_receiver').setLabel('I am the Receiver').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('role_reset').setLabel('Reset Roles').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('role_sender').setLabel('Sender').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('role_receiver').setLabel('Receiver').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('role_reset').setLabel('Reset').setStyle(ButtonStyle.Danger),
   );
 
   try {

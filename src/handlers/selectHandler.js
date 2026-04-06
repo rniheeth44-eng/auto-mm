@@ -75,12 +75,12 @@ async function handleSelectMenu(interaction, client) {
     initiatorTag: user.tag || user.username,
     partner: null,
     partnerTag: null,
-    sender: user.id,      // ticket creator is always Sender
+    sender: null,
     receiver: null,
     amount: null,
     step: 'await_partner',
-    rolesConfirmed: { sender: true, receiver: false },  // sender pre-confirmed
-    amountConfirmed: { sender: false, receiver: false }, // both must confirm
+    rolesConfirmed: { sender: false, receiver: false },
+    amountConfirmed: { sender: false, receiver: false },
     invoiceMsg: null,
   });
 

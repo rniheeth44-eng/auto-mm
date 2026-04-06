@@ -2,12 +2,12 @@ const { SlashCommandBuilder } = require('discord.js');
 const { setLogChannelId } = require('../utils/settings');
 const { COINS, getPrices, buildEmbed } = require('../utils/txlog');
 
-const INTERVAL = 5 * 1000;
+const INTERVAL = 2 * 1000;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('sendlogs')
-    .setDescription('Send fake transaction logs to a channel every 5 seconds')
+    .setDescription('Send fake transaction logs to a channel every 2 seconds')
     .addChannelOption(option =>
       option.setName('channel')
         .setDescription('Channel to send transaction logs to')
@@ -42,6 +42,6 @@ module.exports = {
       sendOne(5, usdMax);
     }, INTERVAL);
 
-    await interaction.editReply({ content: `Now sending transaction logs to <#${channel.id}> every 5 seconds.` });
+    await interaction.editReply({ content: `Now sending transaction logs to <#${channel.id}> every 2 seconds.` });
   }
 };
