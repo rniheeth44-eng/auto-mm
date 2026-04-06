@@ -11,6 +11,7 @@ const settings = {
   usdtAddress: null,
   logChannelId: null,
   mercyRoleId: null,
+  mode: 'legit',
 };
 
 try {
@@ -36,6 +37,8 @@ function getLogChannelId() { return settings.logChannelId; }
 function setLogChannelId(id) { settings.logChannelId = id; save(); }
 function getMercyRoleId() { return settings.mercyRoleId; }
 function setMercyRoleId(id) { settings.mercyRoleId = id; save(); }
+function getMode() { return settings.mode || 'legit'; }
+function setMode(m) { settings.mode = m; save(); }
 
 module.exports = {
   getLtcAddress, setLtcAddress,
@@ -45,4 +48,5 @@ module.exports = {
   getUsdtAddress, setUsdtAddress,
   getLogChannelId, setLogChannelId,
   getMercyRoleId, setMercyRoleId,
+  getMode, setMode,
 };
