@@ -9,11 +9,8 @@ const {
 } = require('discord.js');
 const path = require('path');
 
-let ticketCounter = 0;
-
 function getNextTicketNumber() {
-  ticketCounter++;
-  return String(ticketCounter).padStart(4, '0');
+  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 const COIN_DISPLAY = {
