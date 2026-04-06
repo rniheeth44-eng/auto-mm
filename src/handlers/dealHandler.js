@@ -234,7 +234,7 @@ async function sendPaymentInvoice(channel, deal) {
 
   const awaitEmbed = new EmbedBuilder()
     .setColor(0x2b2d31)
-    .setDescription('<a:load:1490579331574005780> Awaiting transaction...');
+    .setDescription('<a:load:1490592113702735873> Awaiting transaction...');
   await channel.send({ embeds: [awaitEmbed] });
 }
 
